@@ -334,11 +334,11 @@ def create_pet_panel(pet: Pet) -> Panel:
     
     # Stats
     if not pet.is_dead or pet.is_ghost:
-        content.append(f"hunger:    {create_stat_bar(pet.state.hunger)}  {pet.state.hunger}%\n", 
+        content.append(f"hunger:    {create_stat_bar(pet.state.hunger)}  {round(pet.state.hunger)}%\n",
                       style="green" if pet.state.hunger > 30 else "red")
-        content.append(f"happiness: {create_stat_bar(pet.state.happiness)}  {pet.state.happiness}%\n",
+        content.append(f"happiness: {create_stat_bar(pet.state.happiness)}  {round(pet.state.happiness)}%\n",
                       style="green" if pet.state.happiness > 30 else "red")
-        content.append(f"energy:    {create_stat_bar(pet.state.energy)}  {pet.state.energy}%\n",
+        content.append(f"energy:    {create_stat_bar(pet.state.energy)}  {round(pet.state.energy)}%\n",
                       style="green" if pet.state.energy > 30 else "red")
     
     content.append(f"\n{mood.value.upper()} {emoji}\n", style="bold")
