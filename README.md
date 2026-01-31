@@ -58,16 +58,21 @@ Because:
 
 ## Installation
 
+**One-liner (recommended):**
 ```bash
-pip install terminal-pet
+pip install git+https://github.com/apoorvgarg31/terminal-pet.git
 ```
 
-Or install from source:
-
+**Or clone and install:**
 ```bash
 git clone https://github.com/apoorvgarg31/terminal-pet.git
 cd terminal-pet
 pip install -e .
+```
+
+**That's it.** No config needed. Just run:
+```bash
+terminal-pet
 ```
 
 ## Usage
