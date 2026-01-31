@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "terminal-pet"
+version = "0.1.0"
+description = "A tamagotchi that lives in your terminal and feeds on your git commits 🐣"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Apoorv Garg", email = "apoorvgarg31@gmail.com"}
+]
+keywords = ["terminal", "pet", "tamagotchi", "git", "cli", "fun"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "rich>=13.0.0",
+    "click>=8.0.0",
+    "pyyaml>=6.0",
+    "watchdog>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+terminal-pet = "terminal_pet.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/apoorvgarg31/terminal-pet"
+Repository = "https://github.com/apoorvgarg31/terminal-pet"
+Issues = "https://github.com/apoorvgarg31/terminal-pet/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I"]
