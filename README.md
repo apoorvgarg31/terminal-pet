@@ -1,26 +1,12 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/apoorvgarg31/terminal-pet/main/assets/banner.png" alt="terminal-pet banner" width="600">
-</p>
+# 🐣 terminal-pet
 
-<h1 align="center">🐣 terminal-pet</h1>
+**A tamagotchi that lives in your terminal and feeds on your git commits.**
 
-<p align="center">
-  <strong>A tamagotchi that lives in your terminal and feeds on your git commits.</strong>
-</p>
-
-<p align="center">
-  <a href="#installation">Installation</a> •
-  <a href="#usage">Usage</a> •
-  <a href="#how-it-works">How It Works</a> •
-  <a href="#pet-types">Pet Types</a> •
-  <a href="#contributing">Contributing</a>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/python-3.8+-blue.svg" alt="Python 3.8+">
-  <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="MIT License">
-  <img src="https://img.shields.io/github/stars/apoorvgarg31/terminal-pet?style=social" alt="GitHub Stars">
-</p>
+[Installation](#installation) •
+[Usage](#usage) •
+[How It Works](#how-it-works) •
+[Pet Types](#pet-types) •
+[Contributing](#contributing)
 
 ---
 
@@ -29,7 +15,6 @@
 **terminal-pet** is a virtual pet that lives in your terminal. But here's the twist: **your coding activity keeps it alive.**
 
 - 🍕 **Git commits** = Feeding your pet
-- 🎮 **Running tests** = Playing with your pet  
 - 😴 **Long sessions** = Your pet gets tired too
 - 💀 **No commits for days?** = Your pet dies (but can be resurrected!)
 
@@ -115,7 +100,6 @@ terminal-pet watches your git activity in the background:
 | `git commit` | +20 hunger, +10 happiness |
 | `git push` | +10 happiness, +5 energy |
 | `git pull` | +5 happiness |
-| Run tests (`pytest`, `npm test`, etc.) | +15 happiness (playing!) |
 | Long coding session (2hr+) | -10 energy (tired together) |
 | No activity for 24hr | -20 hunger, -15 happiness |
 | No activity for 72hr | Pet enters critical state 😢 |
@@ -148,27 +132,6 @@ Choose your companion:
 terminal-pet --type pixel
 ```
 
-## Customization
-
-Create `~/.terminal-pet/config.yaml`:
-
-```yaml
-pet:
-  name: "Sir Commits-a-Lot"
-  type: "blob"
-  
-tracking:
-  repos:
-    - ~/projects/*
-    - ~/work/*
-  
-notifications:
-  enabled: true
-  critical_only: false
-  
-theme: "retro"  # retro, modern, minimal, rainbow
-```
-
 ## Stats & Streaks
 
 terminal-pet tracks your coding streaks:
@@ -180,20 +143,6 @@ terminal-pet tracks your coding streaks:
 💀 Deaths: 2
 🐣 Resurrections: 2
 ```
-
-## Integrations
-
-### GitHub Actions Badge
-
-Add your pet's status to your GitHub profile:
-
-```markdown
-![terminal-pet](https://terminal-pet.dev/badge/YOUR_USERNAME)
-```
-
-### VS Code Extension (coming soon)
-
-Your pet in the status bar!
 
 ## Philosophy
 
@@ -224,10 +173,6 @@ MIT — do whatever you want with it.
 
 ---
 
-<p align="center">
-  Made with 💜 by <a href="https://github.com/apoorvgarg31">@apoorvgarg31</a>
-</p>
+Made with 💜 by [@apoorvgarg31](https://github.com/apoorvgarg31)
 
-<p align="center">
-  <i>Don't let your pet die. Commit something.</i> 🐣
-</p>
+*Don't let your pet die. Commit something.* 🐣

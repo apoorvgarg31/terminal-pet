@@ -1,5 +1,6 @@
 """CLI interface for terminal-pet."""
 
+import os
 import sys
 import time
 import threading
@@ -18,6 +19,40 @@ from .tracker import GitTracker, poll_for_commits
 
 
 console = Console()
+
+# Cross-platform keyboard input
+if os.name == 'nt':
+    import msvcrt
+
+    def kbhit():
+        """Check if a key has been pressed (Windows)."""
+        return msvcrt.kbhit()
+
+    def getch():
+        """Get a single character from input (Windows)."""
+        return msvcrt.getch().decode('utf-8', errors='ignore')
+else:
+    import select
+    import tty
+    import termios
+
+    def kbhit():
+        """Check if a key has been pressed (Unix)."""
+        try:
+            return select.select([sys.stdin], [], [], 0)[0] != []
+        except Exception:
+            return False
+
+    def getch():
+        """Get a single character from input (Unix)."""
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(fd)
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
 
 
 @click.group(invoke_without_command=True)
@@ -64,11 +99,11 @@ def run_interactive(pet_type: str = None, name: str = None):
             while True:
                 pet.apply_decay()
                 live.update(create_pet_panel(pet))
-                
-                # Check for keyboard input (non-blocking)
-                if sys.stdin in select_stdin():
-                    key = sys.stdin.read(1).lower()
-                    
+
+                # Check for keyboard input (non-blocking, cross-platform)
+                if kbhit():
+                    key = getch().lower()
+
                     if key == "q":
                         break
                     elif key == "f":
@@ -88,12 +123,12 @@ def run_interactive(pet_type: str = None, name: str = None):
                         console.print("""
 [bold]Commands:[/bold]
   [cyan]f[/cyan] - Feed your pet
-  [cyan]p[/cyan] - Play with your pet  
+  [cyan]p[/cyan] - Play with your pet
   [cyan]s[/cyan] - Put pet to sleep
   [cyan]r[/cyan] - Start resurrection (if dead)
   [cyan]q[/cyan] - Quit
                         """)
-                
+
                 time.sleep(0.5)
     except KeyboardInterrupt:
         pass
@@ -101,15 +136,6 @@ def run_interactive(pet_type: str = None, name: str = None):
         tracker.stop()
         pet.save()
         console.print("\n[dim]Your pet is still alive in the background. Come back soon! 👋[/dim]")
-
-
-def select_stdin():
-    """Non-blocking stdin check."""
-    import select
-    try:
-        return select.select([sys.stdin], [], [], 0)[0]
-    except Exception:
-        return []
 
 
 @main.command()

@@ -1,6 +1,7 @@
 """Pet class and state management."""
 
 import json
+import threading
 import time
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timedelta
@@ -38,17 +39,18 @@ class PetState:
     """Represents the current state of a pet."""
     name: str = "Pip"
     pet_type: str = "blob"
-    
+
     # Stats (0-100)
     hunger: int = 80
     happiness: int = 80
     energy: int = 80
-    
+
     # Lifecycle
     born_at: float = field(default_factory=time.time)
     last_fed: float = field(default_factory=time.time)
     last_played: float = field(default_factory=time.time)
     last_activity: float = field(default_factory=time.time)
+    last_decay_applied: float = field(default_factory=time.time)
     died_at: Optional[float] = None
     resurrect_streak: int = 0
     
@@ -70,13 +72,17 @@ class PetState:
 
 class Pet:
     """A terminal pet that feeds on git commits."""
-    
+
     STATE_FILE = Path.home() / ".terminal-pet" / "state.json"
-    
-    # Decay rates (per hour)
-    HUNGER_DECAY = 3
-    HAPPINESS_DECAY = 2
-    ENERGY_DECAY = 1
+
+    # Decay rates (per hour) - tuned for ~7 day survival from full stats
+    # 100 hunger / 0.6 per hour = ~166 hours = ~7 days
+    HUNGER_DECAY = 0.6
+    HAPPINESS_DECAY = 0.4
+    ENERGY_DECAY = 0.2
+
+    # Thread lock for state access
+    _lock = threading.Lock()
     
     # Activity effects
     EFFECTS = {
@@ -111,27 +117,30 @@ class Pet:
     def save(self):
         """Save pet state to file."""
         self._ensure_state_dir()
-        with open(self.STATE_FILE, "w") as f:
-            json.dump(self.state.to_dict(), f, indent=2)
+        with self._lock:
+            with open(self.STATE_FILE, "w") as f:
+                json.dump(self.state.to_dict(), f, indent=2)
     
     def apply_decay(self):
         """Apply time-based stat decay."""
         if self.is_dead:
             return
-        
-        now = time.time()
-        hours_since_activity = (now - self.state.last_activity) / 3600
-        
-        # Apply decay based on time passed
-        self.state.hunger = max(0, self.state.hunger - int(hours_since_activity * self.HUNGER_DECAY))
-        self.state.happiness = max(0, self.state.happiness - int(hours_since_activity * self.HAPPINESS_DECAY))
-        self.state.energy = max(0, self.state.energy - int(hours_since_activity * self.ENERGY_DECAY))
-        
-        # Check for death
-        if self.state.hunger <= 0 and self.state.happiness <= 0:
-            self._die()
-        
-        self.state.last_activity = now
+
+        with self._lock:
+            now = time.time()
+            hours_since_decay = (now - self.state.last_decay_applied) / 3600
+
+            # Apply decay based on time since last decay was applied
+            self.state.hunger = max(0, self.state.hunger - hours_since_decay * self.HUNGER_DECAY)
+            self.state.happiness = max(0, self.state.happiness - hours_since_decay * self.HAPPINESS_DECAY)
+            self.state.energy = max(0, self.state.energy - hours_since_decay * self.ENERGY_DECAY)
+
+            # Update last decay time
+            self.state.last_decay_applied = now
+
+            # Check for death - pet dies when hunger reaches 0
+            if self.state.hunger <= 0:
+                self._die()
     
     def _die(self):
         """Pet dies from neglect."""
@@ -202,31 +211,32 @@ class Pet:
         """Handle an activity event."""
         if activity not in self.EFFECTS:
             return
-        
+
         effects = self.EFFECTS[activity]
-        
+
         # Handle resurrection
         if self.is_dead and activity == "commit":
             self._handle_resurrect_commit()
             return
-        
+
         if self.is_dead:
             return
-        
-        # Apply effects
-        self.state.hunger = min(100, max(0, self.state.hunger + effects.get("hunger", 0)))
-        self.state.happiness = min(100, max(0, self.state.happiness + effects.get("happiness", 0)))
-        self.state.energy = min(100, max(0, self.state.energy + effects.get("energy", 0)))
-        
-        self.state.last_activity = time.time()
-        
-        if activity == "commit":
-            self._handle_commit()
-        elif activity == "feed":
-            self.state.last_fed = time.time()
-        elif activity == "play":
-            self.state.last_played = time.time()
-        
+
+        with self._lock:
+            # Apply effects
+            self.state.hunger = min(100, max(0, self.state.hunger + effects.get("hunger", 0)))
+            self.state.happiness = min(100, max(0, self.state.happiness + effects.get("happiness", 0)))
+            self.state.energy = min(100, max(0, self.state.energy + effects.get("energy", 0)))
+
+            self.state.last_activity = time.time()
+
+            if activity == "commit":
+                self._handle_commit()
+            elif activity == "feed":
+                self.state.last_fed = time.time()
+            elif activity == "play":
+                self.state.last_played = time.time()
+
         self.save()
     
     def _handle_commit(self):
