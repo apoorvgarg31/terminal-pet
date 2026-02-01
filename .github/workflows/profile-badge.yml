@@ -1,0 +1,163 @@
+# Copy this workflow to YOUR profile repo (username/username)
+# Then it will auto-update your pet badge!
+#
+# 1. Fork/copy this file to: your-username/your-username/.github/workflows/
+# 2. It runs every 6 hours and on push
+# 3. Your README will show live pet status based on your commits
+
+name: Update Pet Badge
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  push:
+    branches: [main]
+  workflow_dispatch:  # Manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  update-badge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install terminal-pet
+        run: pip install git+https://github.com/apoorvgarg31/terminal-pet.git
+      
+      - name: Get commit stats and generate badge
+        id: pet
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.repository_owner }}
+        run: |
+          # Get total commits this year
+          COMMITS=$(gh api graphql -f query="
+            query {
+              user(login: \"$GITHUB_USER\") {
+                contributionsCollection {
+                  totalCommitContributions
+                }
+              }
+            }" --jq '.data.user.contributionsCollection.totalCommitContributions')
+          
+          echo "commits=$COMMITS" >> $GITHUB_OUTPUT
+          
+          # Calculate pet mood based on commits
+          if [ "$COMMITS" -ge 500 ]; then
+            MOOD="LEGENDARY 🏆"; HUNGER=100; HAPPINESS=100; ENERGY=100
+          elif [ "$COMMITS" -ge 200 ]; then
+            MOOD="ECSTATIC 🤩"; HUNGER=95; HAPPINESS=100; ENERGY=90
+          elif [ "$COMMITS" -ge 100 ]; then
+            MOOD="HAPPY 😊"; HUNGER=85; HAPPINESS=90; ENERGY=80
+          elif [ "$COMMITS" -ge 50 ]; then
+            MOOD="CONTENT 😌"; HUNGER=70; HAPPINESS=75; ENERGY=70
+          elif [ "$COMMITS" -ge 20 ]; then
+            MOOD="HUNGRY 😐"; HUNGER=50; HAPPINESS=55; ENERGY=55
+          elif [ "$COMMITS" -ge 5 ]; then
+            MOOD="STARVING 😢"; HUNGER=25; HAPPINESS=30; ENERGY=35
+          else
+            MOOD="CRITICAL 💀"; HUNGER=5; HAPPINESS=10; ENERGY=10
+          fi
+          
+          echo "mood=$MOOD" >> $GITHUB_OUTPUT
+          echo "hunger=$HUNGER" >> $GITHUB_OUTPUT
+          echo "happiness=$HAPPINESS" >> $GITHUB_OUTPUT
+          echo "energy=$ENERGY" >> $GITHUB_OUTPUT
+          
+          # Generate SVG badge
+          cat > pet-badge.svg << SVGEOF
+          <svg xmlns="http://www.w3.org/2000/svg" width="300" height="120" viewBox="0 0 300 120">
+            <defs>
+              <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#1f2937"/>
+                <stop offset="100%" style="stop-color:#111827"/>
+              </linearGradient>
+              <linearGradient id="hunger" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#ef4444"/>
+                <stop offset="100%" style="stop-color:#f97316"/>
+              </linearGradient>
+              <linearGradient id="happy" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#eab308"/>
+                <stop offset="100%" style="stop-color:#22c55e"/>
+              </linearGradient>
+              <linearGradient id="energy" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#3b82f6"/>
+                <stop offset="100%" style="stop-color:#8b5cf6"/>
+              </linearGradient>
+            </defs>
+            <rect width="300" height="120" rx="10" fill="url(#bg)"/>
+            <rect x="1" y="1" width="298" height="118" rx="9" fill="none" stroke="#4ade80" stroke-width="2"/>
+            
+            <!-- Pet ASCII -->
+            <text x="30" y="35" font-family="monospace" font-size="14" fill="#fff">🐣 terminal-pet</text>
+            <text x="30" y="55" font-family="monospace" font-size="12" fill="#9ca3af">$MOOD</text>
+            
+            <!-- Stats -->
+            <text x="30" y="75" font-family="monospace" font-size="10" fill="#9ca3af">Hunger</text>
+            <rect x="80" y="68" width="100" height="8" rx="4" fill="#374151"/>
+            <rect x="80" y="68" width="$HUNGER" height="8" rx="4" fill="url(#hunger)"/>
+            <text x="185" y="75" font-family="monospace" font-size="10" fill="#fff">$HUNGER%</text>
+            
+            <text x="30" y="90" font-family="monospace" font-size="10" fill="#9ca3af">Happy</text>
+            <rect x="80" y="83" width="100" height="8" rx="4" fill="#374151"/>
+            <rect x="80" y="83" width="$HAPPINESS" height="8" rx="4" fill="url(#happy)"/>
+            <text x="185" y="90" font-family="monospace" font-size="10" fill="#fff">$HAPPINESS%</text>
+            
+            <text x="30" y="105" font-family="monospace" font-size="10" fill="#9ca3af">Energy</text>
+            <rect x="80" y="98" width="100" height="8" rx="4" fill="#374151"/>
+            <rect x="80" y="98" width="$ENERGY" height="8" rx="4" fill="url(#energy)"/>
+            <text x="185" y="105" font-family="monospace" font-size="10" fill="#fff">$ENERGY%</text>
+            
+            <!-- Commits -->
+            <text x="220" y="55" font-family="monospace" font-size="20" fill="#4ade80">$COMMITS</text>
+            <text x="220" y="70" font-family="monospace" font-size="10" fill="#9ca3af">commits</text>
+          </svg>
+          SVGEOF
+
+      - name: Update README
+        run: |
+          # Check if pet-status marker exists, if not add section
+          if ! grep -q "<!-- PET-STATUS-START -->" README.md 2>/dev/null; then
+            echo "" >> README.md
+            echo "<!-- PET-STATUS-START -->" >> README.md
+            echo "<!-- PET-STATUS-END -->" >> README.md
+          fi
+          
+          # Generate the pet status section
+          PET_SECTION="<!-- PET-STATUS-START -->
+          ### 🐣 My Pet Status
+          
+          ![Pet Badge](pet-badge.svg)
+          
+          | Stat | Value |
+          |:----:|:-----:|
+          | 🍕 Hunger | ${{ steps.pet.outputs.hunger }}% |
+          | 😊 Happiness | ${{ steps.pet.outputs.happiness }}% |
+          | ⚡ Energy | ${{ steps.pet.outputs.energy }}% |
+          | 📊 Commits | ${{ steps.pet.outputs.commits }} |
+          | 🎭 Mood | ${{ steps.pet.outputs.mood }} |
+          
+          > *Updated automatically every 6 hours by [terminal-pet](https://github.com/apoorvgarg31/terminal-pet)*
+          <!-- PET-STATUS-END -->"
+          
+          # Replace content between markers
+          awk -v section="$PET_SECTION" '
+            /<!-- PET-STATUS-START -->/{p=1; print section; next}
+            /<!-- PET-STATUS-END -->/{p=0; next}
+            !p
+          ' README.md > README.tmp && mv README.tmp README.md
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md pet-badge.svg
+          git diff --staged --quiet || git commit -m "🐣 Update pet status"
+          git push
