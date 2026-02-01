@@ -128,6 +128,22 @@ terminal-pet resurrect
 
 Your pet will come back as a ghost 👻 until fully resurrected.
 
+## 🌟 Pet Evolution
+
+Your pet evolves as you commit more code! Evolution is based on **total commits fed** across the pet's lifetime:
+
+| Stage | Commits | Emoji | Description |
+|-------|---------|-------|-------------|
+| Egg | 0-9 | 🥚 | Just hatched, fragile |
+| Baby | 10-49 | 🐣 | Growing, needs attention |
+| Teen | 50-199 | 🐥 | Getting independent |
+| Adult | 200-499 | 🐤 | Fully grown, stable |
+| Elder | 500+ | 👑 | Legendary status! |
+
+Your pet's emoji changes as it evolves, and the badge output shows the current stage. Keep committing to level up!
+
+---
+
 ## Pet Types
 
 Choose your companion:
