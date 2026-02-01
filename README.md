@@ -148,8 +148,6 @@ terminal-pet --type pixel
 
 Show off your pet on your GitHub profile!
 
-### Option 1: Manual Badge (CLI)
-
 ```bash
 # Text format
 terminal-pet badge
@@ -161,46 +159,15 @@ terminal-pet badge --format markdown
 terminal-pet badge --format svg -o badge.svg
 ```
 
-### Option 2: Auto-Updating Badge (GitHub Action) ⭐
-
-Want your badge to **update automatically** based on your commit activity? 
-
-1. **Copy the workflow** from `.github/workflows/profile-badge.yml` to your profile repo (`username/username`)
-
-2. **Add markers to your README** where you want the badge:
-```markdown
-<!-- PET-STATUS-START -->
-<!-- PET-STATUS-END -->
-```
-
-3. **That's it!** The action runs every 6 hours and updates:
-   - SVG badge with animated stats
-   - Markdown table with current status
-   - Mood based on your commit count
-
 **Example output:**
 
-![Pet Badge](assets/badge.svg)
+**🐣 Pip the Blob** | HAPPY 😊
 
-| Stat | Value |
-|:----:|:-----:|
-| 🍕 Hunger | 85% |
-| 😊 Happiness | 90% |
-| ⚡ Energy | 80% |
-| 📊 Commits | 127 |
-| 🎭 Mood | HAPPY 😊 |
+| Hunger | Happiness | Energy |
+|:------:|:---------:|:------:|
+| 99% | 99% | 70% |
 
-### Mood Levels
-
-| Commits | Mood |
-|---------|------|
-| 500+ | LEGENDARY 🏆 |
-| 200+ | ECSTATIC 🤩 |
-| 100+ | HAPPY 😊 |
-| 50+ | CONTENT 😌 |
-| 20+ | HUNGRY 😐 |
-| 5+ | STARVING 😢 |
-| <5 | CRITICAL 💀 |
+Copy the output and paste it in your GitHub profile README!
 
 ---
 
