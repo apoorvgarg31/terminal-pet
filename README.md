@@ -144,6 +144,33 @@ Choose your companion:
 terminal-pet --type pixel
 ```
 
+## 📊 GitHub Badge
+
+Show off your pet on your GitHub profile!
+
+```bash
+# Text format
+terminal-pet badge
+
+# Markdown table (for README)
+terminal-pet badge --format markdown
+
+# SVG badge (for profile)
+terminal-pet badge --format svg -o badge.svg
+```
+
+**Example output:**
+
+**🐣 Pip the Blob** | HAPPY 😊
+
+| Hunger | Happiness | Energy |
+|:------:|:---------:|:------:|
+| 99% | 99% | 70% |
+
+Add it to your GitHub profile README to show visitors your pet's status!
+
+---
+
 ## Stats & Streaks
 
 terminal-pet tracks your coding streaks:
