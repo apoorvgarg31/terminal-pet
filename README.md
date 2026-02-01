@@ -222,6 +222,23 @@ Ideas we'd love:
 - Mini-games
 - Integrations
 
+## Changelog
+
+### v1.1.0 (Feb 2026)
+- 🌟 **Pet Evolution** — Pets now evolve based on total commits (Egg → Baby → Teen → Adult → Elder)
+- 📊 **Badge output** — Show pet status on GitHub profile with `terminal-pet badge`
+- 🎨 Evolution emojis change as your pet grows
+
+### v1.0.0 (Jan 2026)
+- 🐣 Initial release
+- Core pet mechanics (hunger, happiness, energy)
+- Git commit tracking
+- Multiple pet types
+- Resurrection system
+- ASCII art display
+
+---
+
 ## License
 
 MIT — do whatever you want with it.
