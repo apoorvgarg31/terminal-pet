@@ -14,6 +14,7 @@ from .display import (
     create_stats_panel,
     render_full_view,
     render_status,
+    render_evolution_notification,
 )
 from .tracker import GitTracker, poll_for_commits
 from .badge import generate_badge
@@ -71,18 +72,22 @@ def main(ctx, pet_type, name):
 def run_interactive(pet_type: str = None, name: str = None):
     """Run the interactive pet view."""
     pet = Pet()
-    
+    pending_evolution = None  # Track pending evolution notification
+
     # Set up new pet if needed
     if pet_type and pet.state.total_commits == 0:
         pet.state.pet_type = pet_type
     if name and pet.state.total_commits == 0:
         pet.state.name = name
     pet.save()
-    
+
     # Set up git tracking
     def on_git_activity(activity: str):
-        pet.on_activity(activity)
-    
+        nonlocal pending_evolution
+        evolved = pet.on_activity(activity)
+        if evolved:
+            pending_evolution = evolved
+
     tracker = GitTracker(on_git_activity)
     
     # Start backup polling in background
@@ -100,6 +105,13 @@ def run_interactive(pet_type: str = None, name: str = None):
             while True:
                 pet.apply_decay()
                 live.update(create_pet_panel(pet))
+
+                # Check for pending evolution notification
+                if pending_evolution:
+                    live.stop()
+                    render_evolution_notification(pending_evolution, console)
+                    pending_evolution = None
+                    live.start()
 
                 # Check for keyboard input (non-blocking, cross-platform)
                 if kbhit():

@@ -1,6 +1,6 @@
 """Badge generation for terminal-pet."""
 
-from .pet import Pet, PetMood
+from .pet import Pet, PetMood, EvolutionStage, EVOLUTION_EMOJI
 
 
 # Mood emoji mapping (same as display.py)
@@ -42,18 +42,22 @@ def generate_text_badge(pet: Pet) -> str:
 
     name = pet.state.name
     pet_type = pet.state.pet_type.title()
+    stage = pet.evolution_stage
+    stage_emoji = EVOLUTION_EMOJI.get(stage, "")
+    stage_text = stage.value.upper()
 
     hunger = round(pet.state.hunger)
     happiness = round(pet.state.happiness)
     energy = round(pet.state.energy)
 
     if pet.is_dead and not pet.is_ghost:
-        return f"\U0001F480 {name} the {pet_type} | {mood_text}"
+        return f"\U0001F480 {name} the {pet_type} | {mood_text} | {stage_text} {stage_emoji}"
 
-    line1 = f"\U0001F423 {name} the {pet_type} | {mood_text} {emoji}"
+    line1 = f"{stage_emoji} {name} the {pet_type} | {mood_text} {emoji} | {stage_text}"
     line2 = f"Hunger: {hunger}% | Happiness: {happiness}% | Energy: {energy}%"
+    line3 = f"Commits: {pet.state.total_commits}"
 
-    return f"{line1}\n{line2}"
+    return f"{line1}\n{line2}\n{line3}"
 
 
 def generate_markdown_badge(pet: Pet) -> str:
@@ -66,6 +70,9 @@ def generate_markdown_badge(pet: Pet) -> str:
 
     name = pet.state.name
     pet_type = pet.state.pet_type.title()
+    stage = pet.evolution_stage
+    stage_emoji = EVOLUTION_EMOJI.get(stage, "")
+    stage_text = stage.value.upper()
 
     hunger = round(pet.state.hunger)
     happiness = round(pet.state.happiness)
@@ -73,11 +80,11 @@ def generate_markdown_badge(pet: Pet) -> str:
 
     lines = [
         "<!-- terminal-pet badge -->",
-        f"**\U0001F423 {name} the {pet_type}** | {mood_text} {emoji}",
+        f"**{stage_emoji} {name} the {pet_type}** | {mood_text} {emoji} | Stage: {stage_text}",
         "",
-        f"| Hunger | Happiness | Energy |",
-        f"|:------:|:---------:|:------:|",
-        f"| {hunger}% | {happiness}% | {energy}% |",
+        f"| Hunger | Happiness | Energy | Commits |",
+        f"|:------:|:---------:|:------:|:-------:|",
+        f"| {hunger}% | {happiness}% | {energy}% | {pet.state.total_commits} |",
         "",
         "---",
         "*Powered by [terminal-pet](https://github.com/yourusername/terminal-pet)*",
@@ -86,7 +93,7 @@ def generate_markdown_badge(pet: Pet) -> str:
     if pet.is_dead and not pet.is_ghost:
         lines = [
             "<!-- terminal-pet badge -->",
-            f"**\U0001F480 {name} the {pet_type}** | DECEASED",
+            f"**\U0001F480 {name} the {pet_type}** | DECEASED | Stage: {stage_text} {stage_emoji}",
             "",
             "*Rest in peace*",
             "",
@@ -128,30 +135,35 @@ def generate_svg_badge(pet: Pet) -> str:
 
     name = pet.state.name
     pet_type = pet.state.pet_type.title()
+    stage = pet.evolution_stage
+    stage_emoji = EVOLUTION_EMOJI.get(stage, "")
+    stage_text = stage.value.upper()
 
     hunger = round(pet.state.hunger)
     happiness = round(pet.state.happiness)
     energy = round(pet.state.energy)
+    total_commits = pet.state.total_commits
 
     # Badge dimensions
-    width = 280
-    height = 100
+    width = 300
+    height = 115
 
     if pet.is_dead and not pet.is_ghost:
         # Dead pet - simplified badge
-        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="60" viewBox="0 0 {width} 60">
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="70" viewBox="0 0 {width} 70">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#1f2937"/>
       <stop offset="100%" style="stop-color:#111827"/>
     </linearGradient>
   </defs>
-  <rect width="{width}" height="60" rx="8" fill="url(#bg)"/>
-  <rect x="1" y="1" width="{width-2}" height="58" rx="7" fill="none" stroke="#6b7280" stroke-width="1"/>
+  <rect width="{width}" height="70" rx="8" fill="url(#bg)"/>
+  <rect x="1" y="1" width="{width-2}" height="68" rx="7" fill="none" stroke="#6b7280" stroke-width="1"/>
   <text x="20" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="14" fill="#f9fafb">
     <tspan>\U0001F480 {name} the {pet_type}</tspan>
   </text>
   <text x="20" y="46" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#9ca3af">DECEASED</text>
+  <text x="20" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#9ca3af">Stage: {stage_text} {stage_emoji} | Commits: {total_commits}</text>
 </svg>'''
         return svg
 
@@ -174,12 +186,12 @@ def generate_svg_badge(pet: Pet) -> str:
 
   <!-- Header -->
   <text x="15" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#f9fafb">
-    <tspan>\U0001F423 {name} the {pet_type}</tspan>
+    <tspan>{stage_emoji} {name} the {pet_type}</tspan>
   </text>
 
   <!-- Mood badge -->
-  <rect x="200" y="10" width="70" height="20" rx="10" fill="{mood_color}"/>
-  <text x="235" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle">{mood_text}</text>
+  <rect x="210" y="10" width="70" height="20" rx="10" fill="{mood_color}"/>
+  <text x="245" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle">{mood_text}</text>
 
   <!-- Stats labels -->
   <text x="15" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#9ca3af">Hunger</text>
@@ -197,7 +209,10 @@ def generate_svg_badge(pet: Pet) -> str:
   <text x="145" y="82" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#d1d5db">{energy}%</text>
 
   <!-- Mood emoji -->
-  <text x="250" y="75" font-family="system-ui, -apple-system, sans-serif" font-size="24">{emoji}</text>
+  <text x="260" y="75" font-family="system-ui, -apple-system, sans-serif" font-size="24">{emoji}</text>
+
+  <!-- Evolution stage footer -->
+  <text x="15" y="103" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#a78bfa">Stage: {stage_text} | Commits: {total_commits}</text>
 </svg>'''
 
     return svg

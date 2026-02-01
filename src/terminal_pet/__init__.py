@@ -5,7 +5,7 @@ terminal-pet: A tamagotchi that lives in your terminal and feeds on your git com
 __version__ = "0.1.0"
 __author__ = "Apoorv Garg"
 
-from .pet import Pet, PetState, PetType
+from .pet import Pet, PetState, PetType, EvolutionStage, EVOLUTION_EMOJI, EVOLUTION_THRESHOLDS
 from .tracker import GitTracker
 
-__all__ = ["Pet", "PetState", "PetType", "GitTracker"]
+__all__ = ["Pet", "PetState", "PetType", "EvolutionStage", "EVOLUTION_EMOJI", "EVOLUTION_THRESHOLDS", "GitTracker"]

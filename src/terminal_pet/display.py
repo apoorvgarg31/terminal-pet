@@ -8,7 +8,7 @@ from rich.live import Live
 from rich.layout import Layout
 from rich import box
 
-from .pet import Pet, PetMood, PetType
+from .pet import Pet, PetMood, PetType, EvolutionStage, EVOLUTION_EMOJI
 
 
 # ASCII art for different pet types and moods
@@ -321,17 +321,19 @@ def create_stat_bar(value: int, width: int = 10, filled: str = "█", empty: str
 def create_pet_panel(pet: Pet) -> Panel:
     """Create a rich panel displaying the pet."""
     pet.apply_decay()
-    
+
     mood = pet.mood
     art = get_pet_art(pet)
     message = pet.get_message()
     emoji = MOOD_EMOJI.get(mood, "")
-    
+    stage = pet.evolution_stage
+    stage_emoji = pet.evolution_emoji
+
     # Build the display
     content = Text()
     content.append(art + "\n", style="cyan")
     content.append(f'"{message}"\n\n', style="italic yellow")
-    
+
     # Stats
     if not pet.is_dead or pet.is_ghost:
         content.append(f"hunger:    {create_stat_bar(pet.state.hunger)}  {round(pet.state.hunger)}%\n",
@@ -340,19 +342,26 @@ def create_pet_panel(pet: Pet) -> Panel:
                       style="green" if pet.state.happiness > 30 else "red")
         content.append(f"energy:    {create_stat_bar(pet.state.energy)}  {round(pet.state.energy)}%\n",
                       style="green" if pet.state.energy > 30 else "red")
-    
+
     content.append(f"\n{mood.value.upper()} {emoji}\n", style="bold")
-    
-    title = f"🐣 {pet.state.name} the {pet.state.pet_type.title()}"
-    subtitle = f"Age: {pet.age_str}"
-    
+
+    # Evolution stage info
+    commits_to_next = pet.commits_to_next_evolution
+    if commits_to_next is not None:
+        content.append(f"Stage: {stage.value.upper()} {stage_emoji} ({commits_to_next} commits to evolve)\n", style="magenta")
+    else:
+        content.append(f"Stage: {stage.value.upper()} {stage_emoji} (MAX)\n", style="bold magenta")
+
+    title = f"{stage_emoji} {pet.state.name} the {pet.state.pet_type.title()}"
+    subtitle = f"Age: {pet.age_str} | Commits: {pet.state.total_commits}"
+
     if pet.is_dead and not pet.is_ghost:
         title = f"💀 {pet.state.name} (deceased)"
         subtitle = f"Lived for: {pet.age_str}"
     elif pet.is_ghost:
         title = f"👻 {pet.state.name} (ghost)"
         subtitle = f"Resurrection: {pet.state.resurrect_streak}/3 days"
-    
+
     return Panel(
         content,
         title=title,
@@ -415,3 +424,36 @@ def render_status(pet: Pet, console: Console):
     """Render a quick status view."""
     pet.apply_decay()
     console.print(create_pet_panel(pet))
+
+
+def render_evolution_notification(stage: EvolutionStage, console: Console):
+    """Render an evolution achievement notification."""
+    stage_emoji = EVOLUTION_EMOJI.get(stage, "")
+    stage_name = stage.value.upper()
+
+    messages = {
+        EvolutionStage.EGG: "Your pet has hatched... wait, it's still an egg!",
+        EvolutionStage.BABY: "Your egg has hatched! Welcome to the world, little one!",
+        EvolutionStage.TEEN: "Your pet is growing up! It's now a teenager!",
+        EvolutionStage.ADULT: "Your pet has reached adulthood! So proud!",
+        EvolutionStage.ELDER: "Your pet has achieved ELDER status! A true legend!",
+    }
+
+    message = messages.get(stage, f"Your pet evolved to {stage_name}!")
+
+    content = Text()
+    content.append("\n")
+    content.append("  ★ EVOLUTION! ★  \n", style="bold yellow")
+    content.append("\n")
+    content.append(f"    {stage_emoji} {stage_name} {stage_emoji}\n", style="bold magenta")
+    content.append("\n")
+    content.append(f"    {message}\n", style="italic cyan")
+    content.append("\n")
+
+    panel = Panel(
+        content,
+        title="🎉 Achievement Unlocked!",
+        border_style="yellow",
+        box=box.DOUBLE,
+    )
+    console.print(panel)

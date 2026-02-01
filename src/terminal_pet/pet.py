@@ -34,6 +34,34 @@ class PetMood(Enum):
     GHOST = "ghost"
 
 
+class EvolutionStage(Enum):
+    """Pet evolution stages based on total commits fed."""
+    EGG = "egg"        # 0-9 commits
+    BABY = "baby"      # 10-49 commits
+    TEEN = "teen"      # 50-199 commits
+    ADULT = "adult"    # 200-499 commits
+    ELDER = "elder"    # 500+ commits
+
+
+# Evolution stage thresholds (commits needed to reach each stage)
+EVOLUTION_THRESHOLDS = {
+    EvolutionStage.EGG: 0,
+    EvolutionStage.BABY: 10,
+    EvolutionStage.TEEN: 50,
+    EvolutionStage.ADULT: 200,
+    EvolutionStage.ELDER: 500,
+}
+
+# Evolution stage emojis
+EVOLUTION_EMOJI = {
+    EvolutionStage.EGG: "🥚",
+    EvolutionStage.BABY: "🐣",
+    EvolutionStage.TEEN: "🐥",
+    EvolutionStage.ADULT: "🐤",
+    EvolutionStage.ELDER: "👑",
+}
+
+
 @dataclass
 class PetState:
     """Represents the current state of a pet."""
@@ -191,6 +219,39 @@ class Pet:
         """Get pet's age."""
         end_time = self.state.died_at or time.time()
         return timedelta(seconds=end_time - self.state.born_at)
+
+    @property
+    def evolution_stage(self) -> EvolutionStage:
+        """Determine evolution stage based on total commits."""
+        commits = self.state.total_commits
+        if commits >= EVOLUTION_THRESHOLDS[EvolutionStage.ELDER]:
+            return EvolutionStage.ELDER
+        elif commits >= EVOLUTION_THRESHOLDS[EvolutionStage.ADULT]:
+            return EvolutionStage.ADULT
+        elif commits >= EVOLUTION_THRESHOLDS[EvolutionStage.TEEN]:
+            return EvolutionStage.TEEN
+        elif commits >= EVOLUTION_THRESHOLDS[EvolutionStage.BABY]:
+            return EvolutionStage.BABY
+        else:
+            return EvolutionStage.EGG
+
+    @property
+    def evolution_emoji(self) -> str:
+        """Get the emoji for current evolution stage."""
+        return EVOLUTION_EMOJI.get(self.evolution_stage, "🥚")
+
+    @property
+    def commits_to_next_evolution(self) -> Optional[int]:
+        """Get the number of commits needed to reach the next evolution stage."""
+        stage = self.evolution_stage
+        if stage == EvolutionStage.ELDER:
+            return None  # Already at max stage
+
+        # Get next stage threshold
+        stages = list(EvolutionStage)
+        current_index = stages.index(stage)
+        next_stage = stages[current_index + 1]
+        return EVOLUTION_THRESHOLDS[next_stage] - self.state.total_commits
     
     @property
     def age_str(self) -> str:
@@ -207,21 +268,22 @@ class Pet:
             minutes = age.seconds // 60
             return f"{minutes} minute{'s' if minutes != 1 else ''}"
     
-    def on_activity(self, activity: str):
-        """Handle an activity event."""
+    def on_activity(self, activity: str) -> Optional[EvolutionStage]:
+        """Handle an activity event. Returns new evolution stage if evolved, None otherwise."""
         if activity not in self.EFFECTS:
-            return
+            return None
 
         effects = self.EFFECTS[activity]
 
         # Handle resurrection
         if self.is_dead and activity == "commit":
             self._handle_resurrect_commit()
-            return
+            return None
 
         if self.is_dead:
-            return
+            return None
 
+        evolved_to = None
         with self._lock:
             # Apply effects
             self.state.hunger = min(100, max(0, self.state.hunger + effects.get("hunger", 0)))
@@ -231,30 +293,38 @@ class Pet:
             self.state.last_activity = time.time()
 
             if activity == "commit":
-                self._handle_commit()
+                evolved_to = self._handle_commit()
             elif activity == "feed":
                 self.state.last_fed = time.time()
             elif activity == "play":
                 self.state.last_played = time.time()
 
         self.save()
+        return evolved_to
     
-    def _handle_commit(self):
-        """Handle a commit event."""
+    def _handle_commit(self) -> Optional[EvolutionStage]:
+        """Handle a commit event. Returns new evolution stage if evolved, None otherwise."""
+        old_stage = self.evolution_stage
         self.state.total_commits += 1
-        
+        new_stage = self.evolution_stage
+
         today = datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-        
+
         if self.state.last_commit_date == today:
             pass  # Already committed today
         elif self.state.last_commit_date == yesterday:
             self.state.current_streak += 1
         else:
             self.state.current_streak = 1
-        
+
         self.state.last_commit_date = today
         self.state.longest_streak = max(self.state.longest_streak, self.state.current_streak)
+
+        # Return new stage if evolution occurred
+        if new_stage != old_stage:
+            return new_stage
+        return None
     
     def _handle_resurrect_commit(self):
         """Handle a commit while dead (resurrection progress)."""

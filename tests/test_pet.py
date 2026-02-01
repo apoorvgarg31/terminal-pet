@@ -3,7 +3,7 @@
 import time
 import pytest
 from unittest.mock import patch, MagicMock
-from terminal_pet.pet import Pet, PetState, PetMood
+from terminal_pet.pet import Pet, PetState, PetMood, EvolutionStage, EVOLUTION_THRESHOLDS
 
 
 class TestPetState:
@@ -175,3 +175,122 @@ class TestResurrection:
         dead_pet.state.resurrect_streak = 1
         assert dead_pet.is_ghost
         assert dead_pet.mood == PetMood.GHOST
+
+
+class TestEvolution:
+    """Tests for pet evolution mechanics."""
+
+    @pytest.fixture
+    def pet(self, tmp_path):
+        """Create a pet with temporary state file."""
+        state = PetState()
+        pet = Pet(state)
+        pet.STATE_FILE = tmp_path / "state.json"
+        return pet
+
+    def test_new_pet_is_egg(self, pet):
+        """Test that a new pet starts as an egg."""
+        assert pet.evolution_stage == EvolutionStage.EGG
+        assert pet.evolution_emoji == "🥚"
+
+    def test_evolution_to_baby(self, pet):
+        """Test evolution from egg to baby at 10 commits."""
+        pet.state.total_commits = 9
+        assert pet.evolution_stage == EvolutionStage.EGG
+
+        pet.state.total_commits = 10
+        assert pet.evolution_stage == EvolutionStage.BABY
+        assert pet.evolution_emoji == "🐣"
+
+    def test_evolution_to_teen(self, pet):
+        """Test evolution from baby to teen at 50 commits."""
+        pet.state.total_commits = 49
+        assert pet.evolution_stage == EvolutionStage.BABY
+
+        pet.state.total_commits = 50
+        assert pet.evolution_stage == EvolutionStage.TEEN
+        assert pet.evolution_emoji == "🐥"
+
+    def test_evolution_to_adult(self, pet):
+        """Test evolution from teen to adult at 200 commits."""
+        pet.state.total_commits = 199
+        assert pet.evolution_stage == EvolutionStage.TEEN
+
+        pet.state.total_commits = 200
+        assert pet.evolution_stage == EvolutionStage.ADULT
+        assert pet.evolution_emoji == "🐤"
+
+    def test_evolution_to_elder(self, pet):
+        """Test evolution from adult to elder at 500 commits."""
+        pet.state.total_commits = 499
+        assert pet.evolution_stage == EvolutionStage.ADULT
+
+        pet.state.total_commits = 500
+        assert pet.evolution_stage == EvolutionStage.ELDER
+        assert pet.evolution_emoji == "👑"
+
+    def test_evolution_thresholds(self):
+        """Test that evolution thresholds are correctly defined."""
+        assert EVOLUTION_THRESHOLDS[EvolutionStage.EGG] == 0
+        assert EVOLUTION_THRESHOLDS[EvolutionStage.BABY] == 10
+        assert EVOLUTION_THRESHOLDS[EvolutionStage.TEEN] == 50
+        assert EVOLUTION_THRESHOLDS[EvolutionStage.ADULT] == 200
+        assert EVOLUTION_THRESHOLDS[EvolutionStage.ELDER] == 500
+
+    def test_commits_to_next_evolution_egg(self, pet):
+        """Test commits to next evolution from egg stage."""
+        pet.state.total_commits = 0
+        assert pet.commits_to_next_evolution == 10
+
+        pet.state.total_commits = 5
+        assert pet.commits_to_next_evolution == 5
+
+    def test_commits_to_next_evolution_baby(self, pet):
+        """Test commits to next evolution from baby stage."""
+        pet.state.total_commits = 10
+        assert pet.commits_to_next_evolution == 40  # 50 - 10
+
+        pet.state.total_commits = 30
+        assert pet.commits_to_next_evolution == 20  # 50 - 30
+
+    def test_commits_to_next_evolution_elder(self, pet):
+        """Test that elder has no next evolution."""
+        pet.state.total_commits = 500
+        assert pet.commits_to_next_evolution is None
+
+        pet.state.total_commits = 1000
+        assert pet.commits_to_next_evolution is None
+
+    def test_commit_triggers_evolution_detection(self, pet):
+        """Test that committing triggers evolution detection."""
+        pet.state.total_commits = 9
+        pet.state.last_commit_date = None
+
+        # This commit should trigger evolution to BABY
+        evolved = pet.on_activity("commit")
+        assert evolved == EvolutionStage.BABY
+        assert pet.state.total_commits == 10
+
+    def test_commit_no_evolution_when_not_threshold(self, pet):
+        """Test that committing doesn't return evolution when not at threshold."""
+        pet.state.total_commits = 5
+        pet.state.last_commit_date = None
+
+        evolved = pet.on_activity("commit")
+        assert evolved is None
+        assert pet.state.total_commits == 6
+
+    def test_evolution_through_multiple_commits(self, pet):
+        """Test evolution detection through multiple commits."""
+        pet.state.total_commits = 8
+        pet.state.last_commit_date = None
+
+        # Commit 9 - no evolution
+        evolved = pet.on_activity("commit")
+        assert evolved is None
+        assert pet.evolution_stage == EvolutionStage.EGG
+
+        # Commit 10 - evolution to BABY
+        evolved = pet.on_activity("commit")
+        assert evolved == EvolutionStage.BABY
+        assert pet.evolution_stage == EvolutionStage.BABY
