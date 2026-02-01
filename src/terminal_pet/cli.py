@@ -16,6 +16,7 @@ from .display import (
     render_status,
 )
 from .tracker import GitTracker, poll_for_commits
+from .badge import generate_badge
 
 
 console = Console()
@@ -223,11 +224,35 @@ def reset():
     """Reset everything (delete your pet permanently)."""
     if not click.confirm("This will permanently delete your pet. Are you sure?", abort=True):
         return
-    
+
     if Pet.STATE_FILE.exists():
         Pet.STATE_FILE.unlink()
-    
+
     console.print("[yellow]Pet deleted. Run 'terminal-pet' to create a new one.[/yellow]")
+
+
+@main.command()
+@click.option("--format", "badge_format", type=click.Choice(["text", "markdown", "svg"]),
+              default="text", help="Output format for the badge")
+@click.option("--output", "-o", "output_file", type=click.Path(),
+              help="Write badge to file instead of stdout")
+def badge(badge_format: str, output_file: str):
+    """Generate a GitHub profile badge for your pet."""
+    pet = Pet()
+
+    badge_content = generate_badge(pet, badge_format)
+
+    if output_file:
+        with open(output_file, "w") as f:
+            f.write(badge_content)
+        console.print(f"[green]Badge written to {output_file}[/green]")
+    else:
+        if badge_format == "svg":
+            console.print("[dim]SVG badge:[/dim]")
+            console.print(badge_content)
+            console.print("\n[dim]Tip: Use --output badge.svg to save to a file[/dim]")
+        else:
+            console.print(badge_content)
 
 
 if __name__ == "__main__":
