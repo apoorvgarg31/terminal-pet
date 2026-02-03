@@ -2,21 +2,14 @@
 
 **A tamagotchi that lives in your terminal and feeds on your git commits.**
 
-```
-    ╭─────────────────────────────────╮
-    │           ◠ ◡ ◠                │
-    │            \_/                  │  "You committed! *happy dance*"
-    │           /|■|\                 │
-    │            / \                  │  hunger:    ████████░░  80%
-    │                                 │  happiness: ██████████  100%
-    │         HAPPY 😊                │
-    ╰─────────────────────────────────╯
-              🐣 Pip the Blob
-```
+<p align="center">
+  <img src="assets/demo-happy.svg" alt="Happy pet demo" width="600"/>
+</p>
 
 [Installation](#installation) •
 [Usage](#usage) •
 [How It Works](#how-it-works) •
+[Pet Evolution](#-pet-evolution) •
 [Pet Types](#pet-types) •
 [Contributing](#contributing)
 
@@ -107,6 +100,10 @@ That's it. Your pet will appear and start tracking your activity.
 
 terminal-pet watches your git activity in the background:
 
+<p align="center">
+  <img src="assets/demo-feeding.svg" alt="Feeding animation demo" width="600"/>
+</p>
+
 | Activity | Effect |
 |----------|--------|
 | `git commit` | +20 hunger, +10 happiness |
@@ -131,6 +128,10 @@ Your pet will come back as a ghost 👻 until fully resurrected.
 ## 🌟 Pet Evolution
 
 Your pet evolves as you commit more code! Evolution is based on **total commits fed** across the pet's lifetime:
+
+<p align="center">
+  <img src="assets/demo-evolution.svg" alt="Pet evolution stages" width="700"/>
+</p>
 
 | Stage | Commits | Emoji | Description |
 |-------|---------|-------|-------------|
