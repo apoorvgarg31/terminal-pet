@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 180">
+  <defs>
+    <style>
+      .terminal { fill: #1e1e1e; }
+      .text { font-family: 'Courier New', monospace; font-size: 14px; fill: #d4d4d4; }
+      .emoji { font-size: 32px; }
+      .stage { font-size: 12px; fill: #9ca3af; }
+      .active { fill: #4ade80; }
+      .border { stroke: #3f3f46; stroke-width: 2; fill: none; }
+      .arrow { fill: #6b7280; }
+    </style>
+  </defs>
+  
+  <!-- Terminal background -->
+  <rect class="terminal" width="700" height="180" rx="8"/>
+  <rect class="border" x="1" y="1" width="698" height="178" rx="8"/>
+  
+  <!-- Terminal dots -->
+  <circle cx="20" cy="15" r="6" fill="#ef4444"/>
+  <circle cx="40" cy="15" r="6" fill="#facc15"/>
+  <circle cx="60" cy="15" r="6" fill="#22c55e"/>
+  
+  <!-- Title -->
+  <text class="text" x="350" y="50" text-anchor="middle" style="font-size: 16px; fill: #4ade80;">🌟 Pet Evolution Stages</text>
+  
+  <!-- Evolution stages -->
+  <g transform="translate(60, 80)">
+    <!-- Egg -->
+    <text class="emoji" x="0" y="30">🥚</text>
+    <text class="stage" x="8" y="55">Egg</text>
+    <text class="stage" x="0" y="70">0-9</text>
+    
+    <!-- Arrow 1 -->
+    <text class="arrow" x="55" y="25">→</text>
+    
+    <!-- Baby -->
+    <text class="emoji" x="90" y="30">🐣</text>
+    <text class="stage" x="93" y="55">Baby</text>
+    <text class="stage" x="85" y="70">10-49</text>
+    
+    <!-- Arrow 2 -->
+    <text class="arrow" x="145" y="25">→</text>
+    
+    <!-- Teen -->
+    <text class="emoji" x="180" y="30">🐥</text>
+    <text class="stage" x="183" y="55">Teen</text>
+    <text class="stage" x="170" y="70">50-199</text>
+    
+    <!-- Arrow 3 -->
+    <text class="arrow" x="235" y="25">→</text>
+    
+    <!-- Adult -->
+    <text class="emoji" x="270" y="30">🐤</text>
+    <text class="stage" x="270" y="55">Adult</text>
+    <text class="stage" x="257" y="70">200-499</text>
+    
+    <!-- Arrow 4 -->
+    <text class="arrow" x="325" y="25">→</text>
+    
+    <!-- Elder with glow animation -->
+    <g>
+      <text class="emoji" x="360" y="30">👑</text>
+      <text class="stage active" x="360" y="55">Elder</text>
+      <text class="stage active" x="357" y="70">500+</text>
+      <animate attributeName="opacity" values="1;0.7;1" dur="2s" repeatCount="indefinite"/>
+    </g>
+  </g>
+  
+  <!-- Subtitle -->
+  <text class="text" x="350" y="165" text-anchor="middle" style="font-size: 11px; fill: #6b7280;">Evolution based on total commits fed to your pet</text>
+</svg>
