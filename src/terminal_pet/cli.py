@@ -18,6 +18,7 @@ from .display import (
 )
 from .tracker import GitTracker, poll_for_commits
 from .badge import generate_badge
+from .achievements import AchievementTracker, render_achievements_list, render_achievement_notification
 
 
 console = Console()
