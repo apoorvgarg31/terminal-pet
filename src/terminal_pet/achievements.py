@@ -160,6 +160,94 @@ def get_hidden_achievements() -> List[Achievement]:
     return [a for a in ACHIEVEMENTS.values() if a.hidden]
 
 
+# ─── Display Functions ──────────────────────────────────────────────
+
+
+def render_achievement_notification(achievement: Achievement, console: Console):
+    """Render a notification panel when an achievement is earned."""
+    tier_emoji = TIER_EMOJI.get(achievement.tier, "🏅")
+
+    content = Text()
+    content.append("\n")
+    content.append("  ★ ACHIEVEMENT UNLOCKED ★  \n", style="bold yellow")
+    content.append("\n")
+    content.append(f"    {achievement.icon} {achievement.name}\n", style="bold white")
+    content.append(f"    {achievement.description}\n", style="italic dim")
+    content.append(f"\n    Tier: {tier_emoji} {achievement.tier.value.upper()}\n", style="bold")
+    content.append("\n")
+
+    panel = Panel(
+        content,
+        title="🏆 New Achievement!",
+        border_style="yellow",
+        box=box.DOUBLE,
+    )
+    console.print(panel)
+
+
+def render_achievements_list(tracker: "AchievementTracker", console: Console, show_hidden: bool = False):
+    """Render the full achievements list as a Rich table."""
+    table = Table(
+        title="🏆 Achievements",
+        box=box.ROUNDED,
+        show_lines=True,
+        title_style="bold cyan",
+    )
+    table.add_column("", width=3, justify="center")
+    table.add_column("Achievement", style="bold")
+    table.add_column("Description", style="dim")
+    table.add_column("Tier", justify="center")
+    table.add_column("Status", justify="center")
+
+    # Group by tier
+    for tier in AchievementTier:
+        achievements = get_achievements_by_tier(tier)
+        tier_emoji = TIER_EMOJI.get(tier, "🏅")
+
+        for a in achievements:
+            if a.hidden and not show_hidden and not tracker.is_earned(a.id):
+                # Show hidden achievements as ???
+                table.add_row(
+                    "❓",
+                    "???",
+                    "Hidden achievement",
+                    f"{tier_emoji} {tier.value.upper()}",
+                    "🔒",
+                )
+                continue
+
+            earned = tracker.is_earned(a.id)
+            status = "✅" if earned else "⬜"
+            name_style = "bold green" if earned else "dim"
+
+            earned_date = ""
+            if earned:
+                ts = tracker.get_earned_timestamp(a.id)
+                if ts:
+                    earned_date = datetime.fromtimestamp(ts).strftime("%Y-%m-%d")
+                    status = f"✅ {earned_date}"
+
+            table.add_row(
+                a.icon,
+                Text(a.name, style=name_style),
+                a.description,
+                f"{tier_emoji} {tier.value.upper()}",
+                status,
+            )
+
+    console.print(table)
+
+    # Progress bar
+    earned_count = tracker.get_earned_count()
+    total_count = tracker.get_total_count()
+    pct = tracker.get_progress_percentage()
+    console.print(
+        f"\n  Progress: [bold]{earned_count}/{total_count}[/bold] "
+        f"({pct:.1f}%) achievements earned\n",
+        style="cyan",
+    )
+
+
 class AchievementTracker:
     """Tracks and checks achievement conditions against pet state."""
 
