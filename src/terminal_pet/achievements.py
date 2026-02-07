@@ -152,3 +152,89 @@ def get_visible_achievements() -> List[Achievement]:
 def get_hidden_achievements() -> List[Achievement]:
     """Get all hidden achievements."""
     return [a for a in ACHIEVEMENTS.values() if a.hidden]
+
+
+class AchievementTracker:
+    """Tracks and checks achievement conditions against pet state."""
+
+    STATE_FILE = Path.home() / ".terminal-pet" / "achievements.json"
+
+    def __init__(self):
+        self.earned: Dict[str, EarnedAchievement] = {}
+        self._commit_timestamps: List[float] = []
+        self._load()
+
+    def _load(self):
+        """Load earned achievements from disk."""
+        if self.STATE_FILE.exists():
+            try:
+                with open(self.STATE_FILE) as f:
+                    data = json.load(f)
+                self.earned = {
+                    k: EarnedAchievement.from_dict(v)
+                    for k, v in data.get("earned", {}).items()
+                }
+                self._commit_timestamps = data.get("commit_timestamps", [])
+            except (json.JSONDecodeError, KeyError):
+                self.earned = {}
+                self._commit_timestamps = []
+
+    def save(self):
+        """Save earned achievements to disk."""
+        self.STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "earned": {k: v.to_dict() for k, v in self.earned.items()},
+            "commit_timestamps": self._commit_timestamps[-1000:],  # Keep last 1000
+        }
+        with open(self.STATE_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+
+    def is_earned(self, achievement_id: str) -> bool:
+        """Check if an achievement has been earned."""
+        return achievement_id in self.earned
+
+    def earn(self, achievement_id: str) -> Optional[Achievement]:
+        """Mark an achievement as earned. Returns the Achievement if newly earned."""
+        if self.is_earned(achievement_id):
+            return None
+        achievement = get_achievement(achievement_id)
+        if achievement is None:
+            return None
+        self.earned[achievement_id] = EarnedAchievement(achievement_id=achievement_id)
+        self.save()
+        return achievement
+
+    def record_commit_timestamp(self, timestamp: Optional[float] = None):
+        """Record a commit timestamp for speed-based achievements."""
+        ts = timestamp or time.time()
+        self._commit_timestamps.append(ts)
+        self.save()
+
+    def get_earned_achievements(self) -> List[Achievement]:
+        """Get all earned achievements as Achievement objects."""
+        result = []
+        for aid in self.earned:
+            achievement = get_achievement(aid)
+            if achievement:
+                result.append(achievement)
+        return result
+
+    def get_earned_count(self) -> int:
+        """Get the number of earned achievements."""
+        return len(self.earned)
+
+    def get_total_count(self) -> int:
+        """Get the total number of achievements."""
+        return len(ACHIEVEMENTS)
+
+    def get_progress_percentage(self) -> float:
+        """Get percentage of achievements earned."""
+        total = self.get_total_count()
+        if total == 0:
+            return 0.0
+        return (self.get_earned_count() / total) * 100
+
+    def get_earned_timestamp(self, achievement_id: str) -> Optional[float]:
+        """Get the timestamp when an achievement was earned."""
+        earned = self.earned.get(achievement_id)
+        return earned.earned_at if earned else None
