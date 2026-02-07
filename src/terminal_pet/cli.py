@@ -245,6 +245,21 @@ def reset():
 
 
 @main.command()
+@click.option("--all", "show_all", is_flag=True, help="Show hidden achievements too")
+def achievements(show_all: bool):
+    """View your achievements and progress."""
+    tracker = AchievementTracker()
+    pet = Pet()
+
+    # Run a check to see if any new achievements should be awarded
+    newly_earned = tracker.check_all(pet.state, pet.evolution_stage.value)
+    for achievement in newly_earned:
+        render_achievement_notification(achievement, console)
+
+    render_achievements_list(tracker, console, show_hidden=show_all)
+
+
+@main.command()
 @click.option("--format", "badge_format", type=click.Choice(["text", "markdown", "svg"]),
               default="text", help="Output format for the badge")
 @click.option("--output", "-o", "output_file", type=click.Path(),
