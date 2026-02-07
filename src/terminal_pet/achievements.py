@@ -8,6 +8,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
 
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
+from rich import box
+
 
 class AchievementTier(Enum):
     """Achievement rarity tiers."""
