@@ -238,3 +238,160 @@ class AchievementTracker:
         """Get the timestamp when an achievement was earned."""
         earned = self.earned.get(achievement_id)
         return earned.earned_at if earned else None
+
+    def check_commit_milestones(self, total_commits: int) -> List[Achievement]:
+        """Check commit-count milestone achievements."""
+        newly_earned = []
+        milestones = {
+            "first_commit": 1,
+            "ten_commits": 10,
+            "twenty_five_commits": 25,
+            "fifty_commits": 50,
+            "hundred_commits": 100,
+            "two_fifty_commits": 250,
+            "five_hundred_commits": 500,
+            "thousand_commits": 1000,
+        }
+        for aid, threshold in milestones.items():
+            if total_commits >= threshold:
+                result = self.earn(aid)
+                if result:
+                    newly_earned.append(result)
+        return newly_earned
+
+    def check_streak_achievements(self, current_streak: int) -> List[Achievement]:
+        """Check streak-based achievements."""
+        newly_earned = []
+        streaks = {
+            "streak_3": 3,
+            "streak_7": 7,
+            "streak_14": 14,
+            "streak_30": 30,
+            "streak_60": 60,
+            "streak_100": 100,
+            "streak_365": 365,
+        }
+        for aid, threshold in streaks.items():
+            if current_streak >= threshold:
+                result = self.earn(aid)
+                if result:
+                    newly_earned.append(result)
+        return newly_earned
+
+    def check_time_achievements(self) -> List[Achievement]:
+        """Check time-based achievements (hour of day, day of week, holidays)."""
+        newly_earned = []
+        now = datetime.now()
+        hour = now.hour
+        weekday = now.weekday()  # 0=Monday, 6=Sunday
+        month_day = (now.month, now.day)
+
+        # Night Owl: midnight to 4 AM
+        if 0 <= hour < 4:
+            result = self.earn("night_owl")
+            if result:
+                newly_earned.append(result)
+
+        # Early Bird: 5 AM to 7 AM
+        if 5 <= hour < 7:
+            result = self.earn("early_bird")
+            if result:
+                newly_earned.append(result)
+
+        # Midnight Coder: exactly midnight hour
+        if hour == 0:
+            result = self.earn("midnight_coder")
+            if result:
+                newly_earned.append(result)
+
+        # Weekend Warrior: Saturday (5) or Sunday (6)
+        if weekday >= 5:
+            result = self.earn("weekend_warrior")
+            if result:
+                newly_earned.append(result)
+
+        # Holiday Hacker: Dec 25 or Jan 1
+        if month_day in [(12, 25), (1, 1)]:
+            result = self.earn("holiday_hacker")
+            if result:
+                newly_earned.append(result)
+
+        return newly_earned
+
+    def check_speed_demon(self) -> Optional[Achievement]:
+        """Check if 10 commits were made within the last hour."""
+        if self.is_earned("speed_demon"):
+            return None
+        now = time.time()
+        one_hour_ago = now - 3600
+        recent = [t for t in self._commit_timestamps if t >= one_hour_ago]
+        if len(recent) >= 10:
+            return self.earn("speed_demon")
+        return None
+
+    def check_pet_care(self, pet_state) -> List[Achievement]:
+        """Check pet-care related achievements."""
+        newly_earned = []
+
+        # Full stats
+        if (pet_state.hunger >= 100
+                and pet_state.happiness >= 100
+                and pet_state.energy >= 100):
+            result = self.earn("full_stats")
+            if result:
+                newly_earned.append(result)
+
+        # Close call
+        if pet_state.hunger < 10 and pet_state.hunger > 0:
+            result = self.earn("close_call")
+            if result:
+                newly_earned.append(result)
+
+        # Resurrection achievements
+        if pet_state.total_resurrections >= 1:
+            result = self.earn("resurrection")
+            if result:
+                newly_earned.append(result)
+        if pet_state.total_resurrections >= 3:
+            result = self.earn("three_resurrections")
+            if result:
+                newly_earned.append(result)
+
+        # Death count
+        if pet_state.total_deaths >= 5:
+            result = self.earn("five_deaths")
+            if result:
+                newly_earned.append(result)
+
+        return newly_earned
+
+    def check_evolution(self, evolution_stage_value: str) -> Optional[Achievement]:
+        """Check evolution-based achievements."""
+        stage_map = {
+            "baby": "evolve_baby",
+            "teen": "evolve_teen",
+            "adult": "evolve_adult",
+            "elder": "evolve_elder",
+        }
+        aid = stage_map.get(evolution_stage_value)
+        if aid:
+            return self.earn(aid)
+        return None
+
+    def check_all(self, pet_state, evolution_stage_value: str) -> List[Achievement]:
+        """Run all achievement checks and return newly earned achievements."""
+        newly_earned = []
+        newly_earned.extend(self.check_commit_milestones(pet_state.total_commits))
+        newly_earned.extend(self.check_streak_achievements(pet_state.current_streak))
+        newly_earned.extend(self.check_time_achievements())
+        newly_earned.extend(self.check_pet_care(pet_state))
+
+        speed = self.check_speed_demon()
+        if speed:
+            newly_earned.append(speed)
+
+        evo = self.check_evolution(evolution_stage_value)
+        if evo:
+            newly_earned.append(evo)
+
+        return newly_earned
