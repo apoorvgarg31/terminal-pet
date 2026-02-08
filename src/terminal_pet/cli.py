@@ -83,11 +83,19 @@ def run_interactive(pet_type: str = None, name: str = None):
     pet.save()
 
     # Set up git tracking
+    achievement_tracker = AchievementTracker()
+    pending_achievements = []
+
     def on_git_activity(activity: str):
         nonlocal pending_evolution
         evolved = pet.on_activity(activity)
         if evolved:
             pending_evolution = evolved
+        # Check achievements on every activity
+        if activity == "commit":
+            achievement_tracker.record_commit_timestamp()
+        newly = achievement_tracker.check_all(pet.state, pet.evolution_stage.value)
+        pending_achievements.extend(newly)
 
     tracker = GitTracker(on_git_activity)
     
