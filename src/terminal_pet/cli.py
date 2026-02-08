@@ -18,6 +18,7 @@ from .display import (
 )
 from .tracker import GitTracker, poll_for_commits
 from .badge import generate_badge
+from .achievements import AchievementTracker, render_achievements_list, render_achievement_notification
 
 
 console = Console()
@@ -82,11 +83,19 @@ def run_interactive(pet_type: str = None, name: str = None):
     pet.save()
 
     # Set up git tracking
+    achievement_tracker = AchievementTracker()
+    pending_achievements = []
+
     def on_git_activity(activity: str):
         nonlocal pending_evolution
         evolved = pet.on_activity(activity)
         if evolved:
             pending_evolution = evolved
+        # Check achievements on every activity
+        if activity == "commit":
+            achievement_tracker.record_commit_timestamp()
+        newly = achievement_tracker.check_all(pet.state, pet.evolution_stage.value)
+        pending_achievements.extend(newly)
 
     tracker = GitTracker(on_git_activity)
     
@@ -241,6 +250,21 @@ def reset():
         Pet.STATE_FILE.unlink()
 
     console.print("[yellow]Pet deleted. Run 'terminal-pet' to create a new one.[/yellow]")
+
+
+@main.command()
+@click.option("--all", "show_all", is_flag=True, help="Show hidden achievements too")
+def achievements(show_all: bool):
+    """View your achievements and progress."""
+    tracker = AchievementTracker()
+    pet = Pet()
+
+    # Run a check to see if any new achievements should be awarded
+    newly_earned = tracker.check_all(pet.state, pet.evolution_stage.value)
+    for achievement in newly_earned:
+        render_achievement_notification(achievement, console)
+
+    render_achievements_list(tracker, console, show_hidden=show_all)
 
 
 @main.command()
